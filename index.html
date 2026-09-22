@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#1F6F8B" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0F1317" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Tuner">
+<meta name="description" content="A free microphone tuner for guitar and ukulele with a chromatic mode and reference tones. No ads, nothing to buy.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>Open String Tuner</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+  :root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+  img { max-width: 100%; }
+  [hidden] { display: none !important; }
+  :root {
+    --bg: #EDF0F3;
+    --surface: #FFFFFF;
+    --surface-2: #F5F7F9;
+    --ink: #151A1F;
+    --muted: #5E6973;
+    --line: #D4DBE1;
+    --accent: #1F6F8B;
+    --accent-ink: #FFFFFF;
+    --good: #1E9E63;
+    --good-soft: rgba(30, 158, 99, 0.16);
+    --warn: #D0891F;
+    --needle: #151A1F;
+    --shadow: 0 10px 30px rgba(21, 26, 31, 0.08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0F1317;
+      --surface: #181E24;
+      --surface-2: #1F262D;
+      --ink: #EAEEF1;
+      --muted: #8E9AA6;
+      --line: #2B343D;
+      --accent: #5FB3CC;
+      --accent-ink: #0F1317;
+      --good: #3BC98A;
+      --good-soft: rgba(59, 201, 138, 0.18);
+      --warn: #E8B04A;
+      --needle: #EAEEF1;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0F1317;
+    --surface: #181E24;
+    --surface-2: #1F262D;
+    --ink: #EAEEF1;
+    --muted: #8E9AA6;
+    --line: #2B343D;
+    --accent: #5FB3CC;
+    --accent-ink: #0F1317;
+    --good: #3BC98A;
+    --good-soft: rgba(59, 201, 138, 0.18);
+    --warn: #E8B04A;
+    --needle: #EAEEF1;
+    --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  }
+
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 16px;
+    line-height: 1.4;
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: none;
+  }
+  * { box-sizing: border-box; }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  button:focus-visible, [tabindex]:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+  .app {
+    max-width: 480px;
+    margin: 0 auto;
+    min-height: 100%;
+    padding-block: 16px 24px;
+    padding-inline: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .brand {
+    font-family: "Bricolage Grotesque", "Instrument Sans", system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 20px;
+    letter-spacing: -0.01em;
+    margin: 0;
+  }
+  .brand small {
+    display: block;
+    font-family: "Instrument Sans", system-ui, sans-serif;
+    font-weight: 500;
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+  .a4 {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 2px;
+  }
+  .a4 button {
+    width: 32px; height: 32px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    font-size: 18px;
+    line-height: 1;
+  }
+  .a4 button:active { background: var(--surface-2); }
+  .a4 output {
+    font-family: "JetBrains Mono", ui-monospace, Menlo, monospace;
+    font-size: 13px;
+    min-width: 74px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .seg {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 3px;
+    gap: 3px;
+  }
+  .seg button {
+    border: 0;
+    border-radius: 9px;
+    padding: 10px 6px;
+    background: transparent;
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--muted);
+  }
+  .seg button[aria-pressed="true"] {
+    background: var(--accent);
+    color: var(--accent-ink);
+  }
+
+  .meter {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    box-shadow: var(--shadow);
+    padding-block: 14px 18px;
+    padding-inline: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    transition: border-color 200ms ease;
+  }
+  .meter.in-tune { border-color: var(--good); }
+
+  .gauge { width: 100%; max-width: 360px; height: auto; display: block; }
+  .gauge .arc { fill: none; stroke: var(--line); stroke-width: 10; stroke-linecap: round; }
+  .gauge .arc-good { fill: none; stroke: var(--good); stroke-width: 10; stroke-linecap: butt; opacity: 0.9; }
+  .gauge .tick { stroke: var(--muted); stroke-width: 2; stroke-linecap: round; }
+  .gauge .tick.major { stroke: var(--ink); stroke-width: 2.5; }
+  .gauge .lbl { fill: var(--muted); font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 12px; text-anchor: middle; }
+  .gauge .needle { stroke: var(--needle); stroke-width: 4; stroke-linecap: round; transition: transform 90ms linear; transform-origin: 160px 178px; }
+  .gauge .needle.good { stroke: var(--good); }
+  .gauge .hub { fill: var(--surface); stroke: var(--needle); stroke-width: 4; }
+  .gauge .hub.good { stroke: var(--good); }
+  @media (prefers-reduced-motion: reduce) { .gauge .needle { transition: none; } }
+
+  .note {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 6px;
+    margin-top: -6px;
+    min-height: 88px;
+  }
+  .note .letter {
+    font-family: "Bricolage Grotesque", "Instrument Sans", system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 84px;
+    line-height: 1;
+    letter-spacing: -0.03em;
+  }
+  .note .octave {
+    font-family: "Bricolage Grotesque", system-ui, sans-serif;
+    font-weight: 500;
+    font-size: 28px;
+    color: var(--muted);
+  }
+  .readout {
+    display: flex;
+    gap: 18px;
+    font-family: "JetBrains Mono", ui-monospace, Menlo, monospace;
+    font-size: 14px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .readout b { color: var(--ink); font-weight: 500; }
+  .status {
+    font-weight: 600;
+    font-size: 16px;
+    min-height: 22px;
+    color: var(--muted);
+    text-align: center;
+  }
+  .status.flat, .status.sharp { color: var(--warn); }
+  .status.good { color: var(--good); }
+
+  .strings {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    gap: 8px;
+  }
+  .strings:empty { display: none; }
+  .strings button {
+    border: 1px solid var(--line);
+    background: var(--surface);
+    border-radius: 14px;
+    padding-block: 10px 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    transition: background 150ms ease, border-color 150ms ease;
+  }
+  .strings button .n {
+    font-family: "Bricolage Grotesque", system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 22px;
+    line-height: 1.1;
+  }
+  .strings button .n sub { font-size: 12px; font-weight: 500; color: var(--muted); vertical-align: baseline; }
+  .strings button .hz {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 11px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .strings button.near { border-color: var(--accent); background: var(--surface-2); }
+  .strings button.good { border-color: var(--good); background: var(--good-soft); }
+  .strings-hint {
+    font-size: 12px;
+    color: var(--muted);
+    text-align: center;
+    margin: -4px 0 0;
+  }
+
+  .start {
+    border: 0;
+    border-radius: 16px;
+    padding: 16px;
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-weight: 600;
+    font-size: 18px;
+    width: 100%;
+  }
+  .start[data-running="true"] { background: var(--surface); color: var(--ink); border: 1px solid var(--line); }
+  .start:active { filter: brightness(0.94); }
+
+  .error {
+    background: var(--surface-2);
+    border: 1px solid var(--warn);
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 14px;
+  }
+  .error p { margin: 0; }
+
+  footer {
+    margin-top: auto;
+    color: var(--muted);
+    font-size: 13px;
+    text-align: center;
+    max-width: 38ch;
+    align-self: center;
+    text-wrap: balance;
+  }
+  footer p { margin: 0 0 6px; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header>
+    <h1 class="brand">Open String<small>Guitar &amp; ukulele tuner</small></h1>
+    <div class="a4" role="group" aria-label="Reference pitch">
+      <button id="a4-down" type="button" aria-label="Lower reference pitch">−</button>
+      <output id="a4-out" for="a4-down a4-up">A4 440 Hz</output>
+      <button id="a4-up" type="button" aria-label="Raise reference pitch">+</button>
+    </div>
+  </header>
+
+  <div class="seg" role="group" aria-label="Instrument">
+    <button type="button" id="inst-guitar" data-inst="guitar" aria-pressed="true">Guitar</button>
+    <button type="button" id="inst-ukulele" data-inst="ukulele" aria-pressed="false">Ukulele</button>
+    <button type="button" id="inst-chromatic" data-inst="chromatic" aria-pressed="false">Chromatic</button>
+  </div>
+
+  <section class="meter" id="meter" aria-live="polite">
+    <svg class="gauge" viewBox="0 0 320 196" aria-hidden="true">
+      <path class="arc" id="arc-bg" d=""></path>
+      <path class="arc-good" id="arc-good" d=""></path>
+      <g id="ticks"></g>
+      <text class="lbl" x="30" y="190">−50¢</text>
+      <text class="lbl" x="160" y="24">0</text>
+      <text class="lbl" x="290" y="190">+50¢</text>
+      <line class="needle" id="needle" x1="160" y1="178" x2="160" y2="52"></line>
+      <circle class="hub" id="hub" cx="160" cy="178" r="8"></circle>
+    </svg>
+    <div class="note">
+      <span class="letter" id="note-letter">—</span>
+      <span class="octave" id="note-octave"></span>
+    </div>
+    <div class="readout">
+      <span><b id="cents">0</b> cents</span>
+      <span><b id="hz">0.0</b> Hz</span>
+    </div>
+    <div class="status" id="status">Tap Start, then pluck a string</div>
+  </section>
+
+  <div class="strings" id="strings" role="group" aria-label="Strings"></div>
+  <p class="strings-hint" id="strings-hint">Tap a string to hear its reference note</p>
+
+  <button class="start" id="start" type="button" data-running="false">Start tuner</button>
+  <div class="error" id="error" hidden><p id="error-text"></p></div>
+
+  <footer>
+    <p>Sound never leaves your phone. No ads, no account, nothing to buy.</p>
+    <p>For an app icon: iPhone Share → Add to Home Screen. Android browser menu → Add to Home screen.</p>
+  </footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var NOTE_NAMES = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'];
+  var INSTRUMENTS = {
+    guitar:    { strings: [ { midi: 40 }, { midi: 45 }, { midi: 50 }, { midi: 55 }, { midi: 59 }, { midi: 64 } ] },
+    ukulele:   { strings: [ { midi: 67 }, { midi: 60 }, { midi: 64 }, { midi: 69 } ] },
+    chromatic: { strings: [] }
+  };
+
+  var state = {
+    instrument: 'guitar',
+    a4: 440,
+    running: false,
+    ctx: null,
+    analyser: null,
+    stream: null,
+    buf: null,
+    raf: 0,
+    history: [],
+    lastHeard: 0,
+    wakeLock: null
+  };
+
+  try {
+    var savedInst = localStorage.getItem('ost-instrument');
+    if (savedInst && INSTRUMENTS[savedInst]) state.instrument = savedInst;
+    var savedA4 = parseInt(localStorage.getItem('ost-a4'), 10);
+    if (savedA4 >= 430 && savedA4 <= 450) state.a4 = savedA4;
+  } catch (e) {}
+
+  var el = {
+    a4Out: document.getElementById('a4-out'),
+    meter: document.getElementById('meter'),
+    needle: document.getElementById('needle'),
+    hub: document.getElementById('hub'),
+    letter: document.getElementById('note-letter'),
+    octave: document.getElementById('note-octave'),
+    cents: document.getElementById('cents'),
+    hz: document.getElementById('hz'),
+    status: document.getElementById('status'),
+    strings: document.getElementById('strings'),
+    stringsHint: document.getElementById('strings-hint'),
+    start: document.getElementById('start'),
+    error: document.getElementById('error'),
+    errorText: document.getElementById('error-text')
+  };
+
+  // ---------- helpers ----------
+  function midiToFreq(m) { return state.a4 * Math.pow(2, (m - 69) / 12); }
+  function freqToMidi(f) { return 69 + 12 * Math.log2(f / state.a4); }
+  function noteName(m) { return NOTE_NAMES[((m % 12) + 12) % 12]; }
+  function noteOctave(m) { return Math.floor(m / 12) - 1; }
+  function clamp(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }
+  function median(arr) {
+    var s = arr.slice().sort(function (a, b) { return a - b; });
+    var mid = s.length >> 1;
+    return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
+  }
+
+  // ---------- gauge geometry ----------
+  var CX = 160, CY = 178, R = 128, SWEEP = 60; // degrees either side of vertical
+  function polar(deg, r) {
+    var rad = (deg - 90) * Math.PI / 180;
+    return { x: CX + r * Math.cos(rad), y: CY + r * Math.sin(rad) };
+  }
+  function arcPath(fromDeg, toDeg, r) {
+    var a = polar(fromDeg, r), b = polar(toDeg, r);
+    var large = (toDeg - fromDeg) > 180 ? 1 : 0;
+    return 'M ' + a.x.toFixed(2) + ' ' + a.y.toFixed(2) + ' A ' + r + ' ' + r + ' 0 ' + large + ' 1 ' + b.x.toFixed(2) + ' ' + b.y.toFixed(2);
+  }
+  function buildGauge() {
+    document.getElementById('arc-bg').setAttribute('d', arcPath(-SWEEP, SWEEP, R));
+    document.getElementById('arc-good').setAttribute('d', arcPath(-SWEEP * 0.1, SWEEP * 0.1, R));
+    var ticks = document.getElementById('ticks');
+    var html = '';
+    for (var c = -50; c <= 50; c += 10) {
+      var deg = c / 50 * SWEEP;
+      var major = (c === 0 || Math.abs(c) === 50);
+      var inner = polar(deg, R - (major ? 22 : 16));
+      var outer = polar(deg, R - 10);
+      html += '<line class="tick' + (major ? ' major' : '') + '" x1="' + inner.x.toFixed(1) + '" y1="' + inner.y.toFixed(1) + '" x2="' + outer.x.toFixed(1) + '" y2="' + outer.y.toFixed(1) + '"></line>';
+    }
+    ticks.innerHTML = html;
+  }
+  function setNeedle(cents, good) {
+    var deg = clamp(cents, -50, 50) / 50 * SWEEP;
+    el.needle.style.transform = 'rotate(' + deg.toFixed(2) + 'deg)';
+    el.needle.classList.toggle('good', !!good);
+    el.hub.classList.toggle('good', !!good);
+  }
+
+  // ---------- pitch detection (McLeod / NSDF) ----------
+  function detectPitch(buf, sampleRate) {
+    var N = buf.length, i, tau;
+    var rms = 0;
+    for (i = 0; i < N; i++) rms += buf[i] * buf[i];
+    rms = Math.sqrt(rms / N);
+    if (rms < 0.008) return null;
+
+    var minTau = Math.floor(sampleRate / 1100);
+    var maxTau = Math.min(Math.floor(sampleRate / 45), N - 2);
+    var nsdf = new Float32Array(maxTau + 2);
+    for (tau = minTau; tau <= maxTau; tau++) {
+      var acf = 0, m = 0, lim = N - tau;
+      for (i = 0; i < lim; i++) {
+        var a = buf[i], b = buf[i + tau];
+        acf += a * b;
+        m += a * a + b * b;
+      }
+      nsdf[tau] = m > 0 ? (2 * acf) / m : 0;
+    }
+
+    tau = minTau;
+    while (tau <= maxTau && nsdf[tau] > 0) tau++;
+
+    var peaks = [], bestVal = 0;
+    while (tau <= maxTau) {
+      while (tau <= maxTau && nsdf[tau] <= 0) tau++;
+      var localMax = -1, localVal = -Infinity;
+      while (tau <= maxTau && nsdf[tau] > 0) {
+        if (nsdf[tau] > localVal) { localVal = nsdf[tau]; localMax = tau; }
+        tau++;
+      }
+      if (localMax > 0) {
+        peaks.push({ tau: localMax, val: localVal });
+        if (localVal > bestVal) bestVal = localVal;
+      }
+    }
+    if (!peaks.length || bestVal < 0.6) return null;
+
+    var chosen = null;
+    for (i = 0; i < peaks.length; i++) {
+      if (peaks[i].val >= 0.9 * bestVal) { chosen = peaks[i]; break; }
+    }
+    var t = chosen.tau;
+    var y0 = nsdf[t - 1], y1 = nsdf[t], y2 = nsdf[t + 1];
+    var denom = y0 - 2 * y1 + y2;
+    var shift = denom === 0 ? 0 : 0.5 * (y0 - y2) / denom;
+    if (!(Math.abs(shift) < 1)) shift = 0;
+    return { freq: sampleRate / (t + shift), clarity: chosen.val };
+  }
+
+  // ---------- rendering ----------
+  function renderStrings() {
+    var strings = INSTRUMENTS[state.instrument].strings;
+    var html = '';
+    for (var i = 0; i < strings.length; i++) {
+      var m = strings[i].midi;
+      html += '<button type="button" id="string-' + state.instrument + '-' + i + '" data-index="' + i + '" aria-label="' + noteName(m) + noteOctave(m) + ' reference tone">'
+        + '<span class="n">' + noteName(m) + '<sub>' + noteOctave(m) + '</sub></span>'
+        + '<span class="hz">' + midiToFreq(m).toFixed(1) + '</span></button>';
+    }
+    el.strings.innerHTML = html;
+    el.stringsHint.hidden = strings.length === 0;
+  }
+
+  function markString(index, good) {
+    var kids = el.strings.children;
+    for (var i = 0; i < kids.length; i++) {
+      kids[i].classList.toggle('near', i === index);
+      kids[i].classList.toggle('good', i === index && !!good);
+    }
+  }
+
+  function renderIdle(listening) {
+    el.letter.textContent = '—';
+    el.octave.textContent = '';
+    el.cents.textContent = '0';
+    el.hz.textContent = '0.0';
+    el.status.className = 'status';
+    el.status.textContent = listening ? 'Listening… pluck one string' : 'Tap Start, then pluck a string';
+    el.meter.classList.remove('in-tune');
+    setNeedle(0, false);
+    markString(-1, false);
+  }
+
+  function renderPitch(freq) {
+    var midi = freqToMidi(freq);
+    var strings = INSTRUMENTS[state.instrument].strings;
+    var targetMidi, stringIndex = -1;
+
+    if (strings.length) {
+      var bestDist = Infinity;
+      for (var i = 0; i < strings.length; i++) {
+        var d = Math.abs(midi - strings[i].midi);
+        if (d < bestDist) { bestDist = d; stringIndex = i; }
+      }
+      targetMidi = strings[stringIndex].midi;
+    } else {
+      targetMidi = Math.round(midi);
+    }
+
+    var cents = (midi - targetMidi) * 100;
+    var good = Math.abs(cents) <= 5;
+
+    el.letter.textContent = noteName(targetMidi);
+    el.octave.textContent = String(noteOctave(targetMidi));
+    var shown = Math.round(cents);
+    el.cents.textContent = (shown > 0 ? '+' : '') + shown;
+    el.hz.textContent = freq.toFixed(1);
+
+    var cls = 'status', txt;
+    if (good) { cls += ' good'; txt = 'In tune'; }
+    else if (cents < 0) { cls += ' flat'; txt = cents < -50 ? 'Way flat, tighten the string' : 'Flat, tune up a little'; }
+    else { cls += ' sharp'; txt = cents > 50 ? 'Way sharp, loosen the string' : 'Sharp, tune down a little'; }
+    el.status.className = cls;
+    el.status.textContent = txt;
+    el.meter.classList.toggle('in-tune', good);
+    setNeedle(cents, good);
+    markString(stringIndex, good);
+  }
+
+  function renderA4() {
+    el.a4Out.textContent = 'A4 ' + state.a4 + ' Hz';
+    renderStrings();
+  }
+
+  // ---------- audio ----------
+  function ensureCtx() {
+    if (!state.ctx) {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      state.ctx = new AC();
+    }
+    if (state.ctx.state !== 'running') state.ctx.resume();
+    return state.ctx;
+  }
+
+  function playTone(freq) {
+    var ctx = ensureCtx();
+    var now = ctx.currentTime;
+    var osc = ctx.createOscillator();
+    osc.type = 'triangle';
+    osc.frequency.value = freq;
+    var gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.3, now + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 1.8);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 1.85);
+  }
+
+  function showError(msg) {
+    el.errorText.textContent = msg;
+    el.error.hidden = false;
+  }
+
+  function tick() {
+    if (!state.running) return;
+    state.analyser.getFloatTimeDomainData(state.buf);
+    var r = detectPitch(state.buf, state.ctx.sampleRate);
+    var now = performance.now();
+    if (r) {
+      state.history.push(r.freq);
+      if (state.history.length > 5) state.history.shift();
+      state.lastHeard = now;
+      if (state.history.length >= 2) renderPitch(median(state.history));
+    } else if (now - state.lastHeard > 800) {
+      state.history.length = 0;
+      renderIdle(true);
+    }
+    state.raf = requestAnimationFrame(tick);
+  }
+
+  async function start() {
+    el.error.hidden = true;
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      showError('This browser cannot use the microphone. Try Safari on iPhone or Chrome on Android.');
+      return;
+    }
+    try {
+      var ctx = ensureCtx();
+      await ctx.resume();
+      state.stream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }
+      });
+      var src = ctx.createMediaStreamSource(state.stream);
+      var hp = ctx.createBiquadFilter();
+      hp.type = 'highpass';
+      hp.frequency.value = 50;
+      state.analyser = ctx.createAnalyser();
+      state.analyser.fftSize = 2048;
+      state.analyser.smoothingTimeConstant = 0;
+      src.connect(hp);
+      hp.connect(state.analyser);
+      state.buf = new Float32Array(state.analyser.fftSize);
+      state.history.length = 0;
+      state.lastHeard = 0;
+      state.running = true;
+      el.start.textContent = 'Stop';
+      el.start.dataset.running = 'true';
+      renderIdle(true);
+      tick();
+      try {
+        if (navigator.wakeLock) state.wakeLock = await navigator.wakeLock.request('screen');
+      } catch (e) {}
+    } catch (e) {
+      state.running = false;
+      var denied = e && (e.name === 'NotAllowedError' || e.name === 'SecurityError');
+      showError(denied
+        ? 'Microphone access was blocked. Allow the microphone for this page in your browser settings, then tap Start again.'
+        : 'Could not open the microphone. Close other apps using it and try again.');
+    }
+  }
+
+  function stop() {
+    state.running = false;
+    cancelAnimationFrame(state.raf);
+    if (state.stream) {
+      state.stream.getTracks().forEach(function (t) { t.stop(); });
+      state.stream = null;
+    }
+    if (state.wakeLock) { try { state.wakeLock.release(); } catch (e) {} state.wakeLock = null; }
+    el.start.textContent = 'Start tuner';
+    el.start.dataset.running = 'false';
+    renderIdle(false);
+  }
+
+  // ---------- wiring ----------
+  el.start.addEventListener('click', function () { state.running ? stop() : start(); });
+
+  el.strings.addEventListener('click', function (ev) {
+    var btn = ev.target.closest('button');
+    if (!btn) return;
+    var s = INSTRUMENTS[state.instrument].strings[+btn.dataset.index];
+    if (s) playTone(midiToFreq(s.midi));
+  });
+
+  var segButtons = document.querySelectorAll('.seg button');
+  function setInstrument(name) {
+    state.instrument = name;
+    for (var i = 0; i < segButtons.length; i++) {
+      segButtons[i].setAttribute('aria-pressed', segButtons[i].dataset.inst === name ? 'true' : 'false');
+    }
+    try { localStorage.setItem('ost-instrument', name); } catch (e) {}
+    renderStrings();
+    state.history.length = 0;
+    renderIdle(state.running);
+  }
+  for (var i = 0; i < segButtons.length; i++) {
+    segButtons[i].addEventListener('click', function () { setInstrument(this.dataset.inst); });
+  }
+
+  function setA4(v) {
+    state.a4 = clamp(v, 430, 450);
+    try { localStorage.setItem('ost-a4', String(state.a4)); } catch (e) {}
+    renderA4();
+  }
+  document.getElementById('a4-down').addEventListener('click', function () { setA4(state.a4 - 1); });
+  document.getElementById('a4-up').addEventListener('click', function () { setA4(state.a4 + 1); });
+
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden && state.running && state.ctx && state.ctx.state !== 'running') {
+      state.ctx.resume();
+    }
+  });
+
+  buildGauge();
+  renderA4();
+  setInstrument(state.instrument);
+  renderIdle(false);
+})();
+</script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('sw.js').catch(function () {});
+    });
+  }
+</script>
+</body>
+</html>
