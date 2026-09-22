@@ -209,6 +209,7 @@
     line-height: 1;
     letter-spacing: -0.03em;
   }
+  .note .letter.idle { color: var(--line); }
   .note .octave {
     font-family: "Bricolage Grotesque", system-ui, sans-serif;
     font-weight: 500;
@@ -527,7 +528,8 @@
   }
 
   function renderIdle(listening) {
-    el.letter.textContent = '—';
+    el.letter.textContent = '–';
+    el.letter.classList.add('idle');
     el.octave.textContent = '';
     el.cents.textContent = '0';
     el.hz.textContent = '0.0';
@@ -558,6 +560,7 @@
     var good = Math.abs(cents) <= 5;
 
     el.letter.textContent = noteName(targetMidi);
+    el.letter.classList.remove('idle');
     el.octave.textContent = String(noteOctave(targetMidi));
     var shown = Math.round(cents);
     el.cents.textContent = (shown > 0 ? '+' : '') + shown;
